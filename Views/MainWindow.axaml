@@ -1,22 +1,26 @@
-<Window xmlns="https://github.com/avaloniaui"
+<Window x:Class="LensCleaner.Views.MainWindow"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:LensCleaner.ViewModels"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="LensCleaner.Views.MainWindow"
+        xmlns:views="using:LensCleaner.Views"
+        Title="LensCleaner"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="LensCleaner">
+        FontFamily="{StaticResource 'JetBrains Mono'}">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainViewModel />
-    </Design.DataContext>
+    <Window.DataTemplates>
+        <DataTemplate DataType="vm:ChooseFolderViewModel">
+            <Button HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Tapped="OpenFolderDialog">
+                Choose a folder
+            </Button>
+        </DataTemplate>
 
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+        <DataTemplate DataType="vm:SortingViewModel">
+            <views:SortingView />
+        </DataTemplate>
+    </Window.DataTemplates>
 
+    <ContentControl Content="{Binding CurrentPage}" />
 </Window>

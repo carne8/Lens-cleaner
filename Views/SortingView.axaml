@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="LensCleaner.Views.SortingView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LensCleaner.ViewModels"
+             xmlns:models="using:LensCleaner.Models"
+             x:DataType="vm:SortingViewModel">
+    <Grid ColumnDefinitions="Auto, *, Auto, *">
+        <ListBox Grid.Column="0"
+                 ItemsSource="{Binding Photos}"
+                 SelectedIndex="{Binding SelectedPhotoIndex}">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="models:Photo">
+                    <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Panel Grid.Column="2">
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding !CurrentImage^}" />
+            <Image HorizontalAlignment="Stretch"
+                   VerticalAlignment="Stretch"
+                   Source="{Binding CurrentImage^}"
+                   RenderOptions.BitmapInterpolationMode="HighQuality"
+                   IsVisible="{Binding !!CurrentImage^}" />
+        </Panel>
+    </Grid>
+</UserControl>
