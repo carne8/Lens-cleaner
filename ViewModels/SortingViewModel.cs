@@ -6,30 +6,51 @@ using LensCleaner.Models;
 
 namespace LensCleaner.ViewModels;
 
-public partial class LoadingBitmap(int idx) : ObservableObject, IDisposable
+public partial class LoadingBitmap : ObservableObject, IDisposable
 {
     [ObservableProperty]
     public partial WriteableBitmap? Bitmap { get; set; }
+    public bool IsLoaded => Bitmap is not null;
+    public readonly int Index;
 
+    private readonly PhotoFile file;
     private readonly TaskCompletionSource<WriteableBitmap> tcs = new();
-    private Task<WriteableBitmap> LoadTask => tcs.Task;
-    public bool IsLoading => Bitmap is null;
 
-    public readonly int Index = idx;
+    /// <inheritdoc/>
+    public LoadingBitmap(PhotoFile file, int idx)
+    {
+        this.file = file;
+        Index = idx;
+        if (file.Photo.Has<PhotoViewModel>())
+            file.Photo.Get<PhotoViewModel>().SetQueued();
+    }
+
+    public void SetLoading()
+    {
+        if (file.Photo.Has<PhotoViewModel>())
+            file.Photo.Get<PhotoViewModel>().SetLoading();
+    }
 
     public void SetLoaded(WriteableBitmap bitmap)
     {
         if (tcs.TrySetResult(bitmap))
+        {
+            if (file.Photo.Has<PhotoViewModel>())
+                file.Photo.Get<PhotoViewModel>().SetLoaded();
             Bitmap = bitmap;
+        }
         else
             bitmap.Dispose();
     }
 
     public void Dispose()
     {
+        if (file.Photo.Has<PhotoViewModel>())
+            file.Photo.Get<PhotoViewModel>().Reset();
+
         GC.SuppressFinalize(this);
         Bitmap?.Dispose();
-        LoadTask.ContinueWith(t =>
+        tcs.Task.ContinueWith(t =>
         {
             Bitmap?.Dispose();
             t.Dispose();
@@ -63,7 +84,8 @@ internal class CacheManager : IDisposable
             {
                 var file = await queue.DequeueAsync(cts.Token);
                 if (!Items.TryGetValue(file, out var c)) continue;
-                if (!c.IsLoading) continue;
+                if (c.IsLoaded) continue;
+                c.SetLoading();
 
                 using var image = new MagickImage();
                 await image.ReadAsync(file.Path, cts.Token);
@@ -86,7 +108,7 @@ internal class CacheManager : IDisposable
     {
         if (Items.TryGetValue(file, out var bmp)) return bmp;
 
-        Items[file] = new LoadingBitmap(photoIdx);
+        Items[file] = new LoadingBitmap(file, photoIdx);
         queue.Enqueue(file, loadPriority);
         return Items[file];
     }
@@ -97,7 +119,7 @@ internal class CacheManager : IDisposable
     public void Prefetch(PhotoFile file, int photoIdx, int loadPriority)
     {
         if (Items.ContainsKey(file)) return;
-        Items[file] = new LoadingBitmap(photoIdx);
+        Items[file] = new LoadingBitmap(file, photoIdx);
         queue.Enqueue(file, loadPriority);
     }
 
@@ -105,7 +127,7 @@ internal class CacheManager : IDisposable
     {
         queue.Clear();
         foreach (var kv in Items)
-            if (kv.Value.IsLoading)
+            if (!kv.Value.IsLoaded)
             {
                 Items.Remove(kv.Key, out _);
                 kv.Value.Dispose();
@@ -132,13 +154,50 @@ internal class CacheManager : IDisposable
     }
 }
 
+public partial class PhotoViewModel(Photo photo) : ObservableObject
+{
+    public string Name => photo.Name;
+    [ObservableProperty] public partial bool IsFileQueued { get; set; }
+    [ObservableProperty] public partial bool IsFileLoading { get; set; }
+    [ObservableProperty] public partial bool IsFileLoaded { get; set; }
+
+    public void SetQueued()
+    {
+        IsFileQueued = true;
+        IsFileLoading = false;
+        IsFileLoaded = false;
+    }
+
+    public void SetLoading()
+    {
+        IsFileQueued = false;
+        IsFileLoading = true;
+        IsFileLoaded = false;
+    }
+
+    public void SetLoaded()
+    {
+        IsFileQueued = false;
+        IsFileLoading = false;
+        IsFileLoaded = true;
+    }
+
+    public void Reset()
+    {
+        IsFileQueued = false;
+        IsFileLoading = false;
+        IsFileLoaded = false;
+    }
+}
+
 public partial class SortingViewModel : ViewModelBase
 {
+    private readonly Photo[] photos;
     private readonly CacheManager cache;
-    private const int CacheSizeAfter = 12;
-    private const int CacheSizeBefore = 12;
+    private const int CacheSizeAfter = 8;
+    private const int CacheSizeBefore = 8;
 
-    [ObservableProperty] public partial Photo[] Photos { get; set; }
+    public PhotoViewModel[] Photos { get; set; }
     [ObservableProperty] public partial LoadingBitmap CurrentImage { get; private set; }
 
     private int currentImageIdx;
@@ -154,14 +213,20 @@ public partial class SortingViewModel : ViewModelBase
 
     public SortingViewModel(Photo[] photos)
     {
-        Photos = photos;
+        this.photos = photos;
+        Photos = photos.Select(p =>
+        {
+            var t = new PhotoViewModel(p);
+            p.Entity.Add(t);
+            return t;
+        }).ToArray();
         cache = new CacheManager(CacheSizeAfter);
         LoadImage();
     }
 
     public void NextImage()
     {
-        currentImageIdx = int.Min(currentImageIdx + 1, Photos.Length - 1);
+        currentImageIdx = int.Min(currentImageIdx + 1, photos.Length - 1);
         OnPropertyChanged(nameof(CurrentImageIdx));
     }
 
@@ -173,7 +238,7 @@ public partial class SortingViewModel : ViewModelBase
 
     public void LoadImage()
     {
-        if (currentImageIdx < 0 || Photos.Length <= currentImageIdx) return;
+        if (currentImageIdx < 0 || photos.Length <= currentImageIdx) return;
         cache.StopCurrentLoads();
 
         if (!GetPhotoFile(currentImageIdx, out var file)) throw new IndexOutOfRangeException();
@@ -206,10 +271,10 @@ public partial class SortingViewModel : ViewModelBase
     private bool GetPhotoFile(int idx, out PhotoFile file)
     {
         file = default;
-        if (idx < 0 || Photos.Length <= idx) return false;
+        if (idx < 0 || photos.Length <= idx) return false;
 
-        var fileEntity = Photos[idx].Files[0];
-        if (!Photos[idx].Files[0].Has<PhotoFile>()) return false;
+        var fileEntity = photos[idx].Files[0];
+        if (!photos[idx].Files[0].Has<PhotoFile>()) return false;
 
         file = fileEntity.Get<PhotoFile>();
         return true;

@@ -58,11 +58,17 @@ public partial class LoadingSortingViewModel : ViewModelBase
 
             // Get or add photo
             var photoExists = nameToPhoto.TryGetValue(filename, out var p);
-            var photoEntity =
-                photoExists
-                    ? p
-                    : world.Create(new Photo { Name = filename });
-            if (!photoExists) nameToPhoto.Add(filename, photoEntity);
+            var photoEntity = photoExists ? p : world.Create();
+
+            if (!photoExists)
+            {
+                photoEntity.Add(new Photo
+                {
+                    Name = filename,
+                    Entity = photoEntity
+                });
+                nameToPhoto.Add(filename, photoEntity);
+            }
 
             if (!PhotoFile.TryParseFile(photoEntity, path, out var photoFile)) continue;
             var photoFileEntity = world.Create(photoFile);

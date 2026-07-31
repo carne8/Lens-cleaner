@@ -3,9 +3,10 @@ using ImageMagick;
 
 namespace LensCleaner.Models;
 
-public struct Photo()
+public readonly struct Photo()
 {
-    public string Name { get; init; }
+    public required Entity Entity { get; init; }
+    public required string Name { get; init; }
     public List<Entity> Files { get; } = [];
 }
 

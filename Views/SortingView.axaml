@@ -2,17 +2,56 @@
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LensCleaner.ViewModels"
-             xmlns:models="using:LensCleaner.Models"
              x:DataType="vm:SortingViewModel">
+
+    <UserControl.Styles>
+        <Styles>
+            <Style Selector="Border.queued">
+                <Setter Property="BorderBrush" Value="Orange" />
+            </Style>
+            <Style Selector="Border.loading">
+                <Setter Property="BorderBrush" Value="DeepSkyBlue" />
+            </Style>
+            <Style Selector="Border.loaded">
+                <Setter Property="BorderBrush" Value="LawnGreen" />
+            </Style>
+
+            <Style Selector="ListBoxItem:selected &gt; Border">
+                <Setter Property="BorderBrush" Value="#dadada" />
+            </Style>
+            <Style Selector="ListBoxItem:selected &gt; Border.queued">
+                <Setter Property="BorderBrush" Value="#e09100" />
+            </Style>
+            <Style Selector="ListBoxItem:selected &gt; Border.loading">
+                <Setter Property="BorderBrush" Value="#009dd1" />
+            </Style>
+            <Style Selector="ListBoxItem:selected &gt; Border.loaded">
+                <Setter Property="BorderBrush" Value="#61c400" />
+            </Style>
+        </Styles>
+    </UserControl.Styles>
+
     <Grid ColumnDefinitions="Auto, *, Auto, *">
         <ListBox Grid.Column="0"
                  ItemsSource="{Binding Photos}"
                  SelectedIndex="{Binding CurrentImageIdx}">
+
+            <ListBox.ItemContainerTheme>
+                <ControlTheme TargetType="ListBoxItem" />
+            </ListBox.ItemContainerTheme>
+
             <ListBox.ItemTemplate>
-                <DataTemplate DataType="models:Photo">
-                    <TextBlock Text="{Binding Name}" />
+                <DataTemplate DataType="vm:PhotoViewModel">
+                    <Border Padding="7"
+                            BorderThickness="3"
+                            Classes.queued="{Binding IsFileQueued}"
+                            Classes.loading="{Binding IsFileLoading}"
+                            Classes.loaded="{Binding IsFileLoaded}">
+                        <TextBlock Text="{Binding Name}" />
+                    </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>
+
         </ListBox>
 
         <Panel Grid.Column="2">
@@ -24,4 +63,5 @@
                    IsVisible="{Binding !!CurrentImage?.Bitmap}" />
         </Panel>
     </Grid>
+
 </UserControl>

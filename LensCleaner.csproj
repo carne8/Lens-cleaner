@@ -18,7 +18,6 @@
 
     <ItemGroup>
         <PackageReference Include="Arch" Version="2.1.0" />
-        <PackageReference Include="Arch.Relationships" Version="1.0.1" />
         <PackageReference Include="Avalonia" Version="12.1.0" />
         <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
