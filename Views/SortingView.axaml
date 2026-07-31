@@ -16,12 +16,12 @@
         </ListBox>
 
         <Panel Grid.Column="2">
-            <ProgressBar IsIndeterminate="True" IsVisible="{Binding !CurrentImage^}" />
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding !CurrentImage?.Bitmap}" />
             <Image HorizontalAlignment="Stretch"
                    VerticalAlignment="Stretch"
-                   Source="{Binding CurrentImage^}"
+                   Source="{Binding CurrentImage?.Bitmap}"
                    RenderOptions.BitmapInterpolationMode="HighQuality"
-                   IsVisible="{Binding !!CurrentImage^}" />
+                   IsVisible="{Binding !!CurrentImage?.Bitmap}" />
         </Panel>
     </Grid>
 </UserControl>

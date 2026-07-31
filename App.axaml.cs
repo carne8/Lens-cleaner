@@ -1,12 +1,13 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using LensCleaner.ViewModels;
 using LensCleaner.Views;
 
 namespace LensCleaner;
 
-public partial class App : Application
+public class App : Application
 {
     public override void Initialize()
     {
@@ -15,6 +16,8 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        Dispatcher.UIThread.UnhandledException += OnUnhandledException;
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
@@ -24,5 +27,14 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        // Log the exception
+        Console.Error.WriteLine($"Unhandled UI thread exception: {e.Exception}");
+
+        // Optionally prevent the application from crashing
+        e.Handled = true;
     }
 }

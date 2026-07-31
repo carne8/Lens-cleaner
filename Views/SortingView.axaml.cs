@@ -12,19 +12,43 @@ public partial class SortingView : UserControl
     {
         InitializeComponent();
         KeyDownEvent.AddClassHandler<TopLevel>(OnKeyDown, handledEventsToo: true, routes: RoutingStrategies.Tunnel);
+        KeyUpEvent.AddClassHandler<TopLevel>(OnKeyUp, handledEventsToo: true, routes: RoutingStrategies.Tunnel);
     }
+
+    private int leftPresses;
+    private int rightPresses;
 
     private void OnKeyDown(TopLevel sender, KeyEventArgs arg)
     {
         if (arg.Key == Key.Right)
         {
-            ViewModel.NextImage();
             arg.Handled = true;
+            ViewModel.NextImage();
+            if (rightPresses == 0) ViewModel.LoadBitmap();
+            rightPresses++;
         }
         if (arg.Key == Key.Left)
         {
-            ViewModel.PreviousImage();
             arg.Handled = true;
+            ViewModel.PreviousImage();
+            if (leftPresses == 0) ViewModel.LoadBitmap();
+            leftPresses++;
+        }
+    }
+
+    private void OnKeyUp(TopLevel sender, KeyEventArgs arg)
+    {
+        if (arg.Key == Key.Right)
+        {
+            arg.Handled = true;
+            if (rightPresses > 1) ViewModel.LoadBitmap();
+            rightPresses = 0;
+        }
+        if (arg.Key == Key.Left)
+        {
+            arg.Handled = true;
+            if (leftPresses > 1) ViewModel.LoadBitmap();
+            leftPresses = 0;
         }
     }
 }
