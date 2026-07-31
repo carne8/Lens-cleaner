@@ -24,14 +24,14 @@ public partial class SortingView : UserControl
         {
             arg.Handled = true;
             ViewModel.NextImage();
-            if (rightPresses == 0) ViewModel.LoadBitmap();
+            if (rightPresses == 0) ViewModel.LoadImage();
             rightPresses++;
         }
         if (arg.Key == Key.Left)
         {
             arg.Handled = true;
             ViewModel.PreviousImage();
-            if (leftPresses == 0) ViewModel.LoadBitmap();
+            if (leftPresses == 0) ViewModel.LoadImage();
             leftPresses++;
         }
     }
@@ -41,13 +41,13 @@ public partial class SortingView : UserControl
         if (arg.Key == Key.Right)
         {
             arg.Handled = true;
-            if (rightPresses > 1) ViewModel.LoadBitmap();
+            if (rightPresses > 1) ViewModel.LoadImage();
             rightPresses = 0;
         }
         if (arg.Key == Key.Left)
         {
             arg.Handled = true;
-            if (leftPresses > 1) ViewModel.LoadBitmap();
+            if (leftPresses > 1) ViewModel.LoadImage();
             leftPresses = 0;
         }
     }

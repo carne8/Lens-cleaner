@@ -27,6 +27,6 @@ public partial class MainWindow : Window
         });
 
         if (folders.Count == 0) return;
-        ViewModel.OpenSortingView(folders[0]);
+        ViewModel.OpenLoadingSortingView(folders[0]);
     }
 }

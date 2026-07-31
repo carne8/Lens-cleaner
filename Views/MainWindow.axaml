@@ -20,6 +20,10 @@
         <DataTemplate DataType="vm:SortingViewModel">
             <views:SortingView />
         </DataTemplate>
+
+        <DataTemplate DataType="vm:LoadingSortingViewModel">
+            <views:LoadingSortingView />
+        </DataTemplate>
     </Window.DataTemplates>
 
     <ContentControl Content="{Binding CurrentPage}" />

@@ -7,7 +7,7 @@
     <Grid ColumnDefinitions="Auto, *, Auto, *">
         <ListBox Grid.Column="0"
                  ItemsSource="{Binding Photos}"
-                 SelectedIndex="{Binding SelectedPhotoIndex}">
+                 SelectedIndex="{Binding CurrentImageIdx}">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="models:Photo">
                     <TextBlock Text="{Binding Name}" />

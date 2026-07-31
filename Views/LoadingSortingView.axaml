@@ -1,0 +1,14 @@
+﻿<UserControl x:Class="LensCleaner.Views.LoadingSortingView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LensCleaner.ViewModels"
+             x:DataType="vm:LoadingSortingViewModel">
+    <StackPanel HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Vertical">
+        <TextBlock TextAlignment="Center">Loading image info</TextBlock>
+        <ProgressBar Minimum="0"
+                     Maximum="1"
+                     Value="{Binding Progress}" />
+    </StackPanel>
+</UserControl>
