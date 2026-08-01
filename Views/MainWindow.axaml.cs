@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 
@@ -6,7 +7,28 @@ namespace LensCleaner.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow() => InitializeComponent();
+    private WindowState previousWindowState = WindowState.Normal;
+
+    public MainWindow()
+    {
+        InitializeComponent();
+        KeyDown += OnKeyDown;
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs arg)
+    {
+        if (arg.Key != Key.F11) return;
+
+        if (WindowState == WindowState.FullScreen)
+            WindowState = previousWindowState;
+        else
+        {
+            previousWindowState = WindowState;
+            WindowState = WindowState.FullScreen;
+        }
+
+        arg.Handled = true;
+    }
 
     private ViewModels.MainViewModel ViewModel => (ViewModels.MainViewModel)DataContext!;
 

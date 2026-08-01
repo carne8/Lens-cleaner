@@ -163,38 +163,22 @@ internal class CacheManager : IDisposable
 
 public partial class PhotoViewModel(Photo photo) : ObservableObject
 {
+    public enum PhotoLoadingState { NotLoading, Queued, Loading, Loaded }
+
     public string Name => photo.Name;
-    [ObservableProperty] public partial bool IsFileQueued { get; set; }
-    [ObservableProperty] public partial bool IsFileLoading { get; set; }
-    [ObservableProperty] public partial bool IsFileLoaded { get; set; }
 
-    public void SetQueued()
-    {
-        IsFileQueued = true;
-        IsFileLoading = false;
-        IsFileLoaded = false;
-    }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsFileQueued), nameof(IsFileLoading), nameof(IsFileLoaded))]
+    public partial PhotoLoadingState State { get; set; } = PhotoLoadingState.NotLoading;
 
-    public void SetLoading()
-    {
-        IsFileQueued = false;
-        IsFileLoading = true;
-        IsFileLoaded = false;
-    }
+    public bool IsFileQueued => State == PhotoLoadingState.Queued;
+    public bool IsFileLoading => State == PhotoLoadingState.Loading;
+    public bool IsFileLoaded => State == PhotoLoadingState.Loaded;
 
-    public void SetLoaded()
-    {
-        IsFileQueued = false;
-        IsFileLoading = false;
-        IsFileLoaded = true;
-    }
-
-    public void Reset()
-    {
-        IsFileQueued = false;
-        IsFileLoading = false;
-        IsFileLoaded = false;
-    }
+    public void SetQueued() => State = PhotoLoadingState.Queued;
+    public void SetLoading() => State = PhotoLoadingState.Loading;
+    public void SetLoaded() => State = PhotoLoadingState.Loaded;
+    public void Reset() => State = PhotoLoadingState.NotLoading;
 }
 
 public partial class SortingViewModel : ViewModelBase
