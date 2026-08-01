@@ -17,6 +17,7 @@
             </Style>
 
             <Style Selector="ListBoxItem:selected &gt; Border">
+                <Setter Property="Background" Value="#dadada" />
                 <Setter Property="BorderBrush" Value="#dadada" />
             </Style>
             <Style Selector="ListBoxItem:selected &gt; Border.queued">
@@ -55,12 +56,12 @@
         </ListBox>
 
         <Panel Grid.Column="2">
-            <ProgressBar IsIndeterminate="True" IsVisible="{Binding !CurrentImage?.Bitmap}" />
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding !CurrentImage?.IsLoaded}" />
             <Image HorizontalAlignment="Stretch"
                    VerticalAlignment="Stretch"
                    Source="{Binding CurrentImage?.Bitmap}"
                    RenderOptions.BitmapInterpolationMode="HighQuality"
-                   IsVisible="{Binding !!CurrentImage?.Bitmap}" />
+                   IsVisible="{Binding CurrentImage?.IsLoaded}" />
         </Panel>
     </Grid>
 

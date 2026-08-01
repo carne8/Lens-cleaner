@@ -34,6 +34,16 @@ public partial class SortingView : UserControl
             if (leftPresses == 0) ViewModel.LoadImage();
             leftPresses++;
         }
+        if (arg.Key == Key.Up)
+        {
+            ViewModel.PreviousImageFile();
+            arg.Handled = true;
+        }
+        if (arg.Key == Key.Down)
+        {
+            ViewModel.NextImageFile();
+            arg.Handled = true;
+        }
     }
 
     private void OnKeyUp(TopLevel sender, KeyEventArgs arg)

@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Arch.Core.Extensions;
 using Avalonia.Media.Imaging;
 using ImageMagick;
@@ -9,34 +9,40 @@ namespace LensCleaner.ViewModels;
 public partial class LoadingBitmap : ObservableObject, IDisposable
 {
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLoaded))]
     public partial WriteableBitmap? Bitmap { get; set; }
     public bool IsLoaded => Bitmap is not null;
     public readonly int Index;
+    public readonly PhotoFile File;
 
-    private readonly PhotoFile file;
+    private readonly bool updatePhotoViewModel;
     private readonly TaskCompletionSource<WriteableBitmap> tcs = new();
 
     /// <inheritdoc/>
-    public LoadingBitmap(PhotoFile file, int idx)
+    public LoadingBitmap(PhotoFile file, int idx, bool updatePhotoViewModel = true)
     {
-        this.file = file;
+        File = file;
         Index = idx;
-        if (file.Photo.Has<PhotoViewModel>())
+        this.updatePhotoViewModel = updatePhotoViewModel;
+        if (updatePhotoViewModel &&
+            file.Photo.Has<PhotoViewModel>())
             file.Photo.Get<PhotoViewModel>().SetQueued();
     }
 
     public void SetLoading()
     {
-        if (file.Photo.Has<PhotoViewModel>())
-            file.Photo.Get<PhotoViewModel>().SetLoading();
+        if (updatePhotoViewModel &&
+            File.Photo.Has<PhotoViewModel>())
+            File.Photo.Get<PhotoViewModel>().SetLoading();
     }
 
     public void SetLoaded(WriteableBitmap bitmap)
     {
         if (tcs.TrySetResult(bitmap))
         {
-            if (file.Photo.Has<PhotoViewModel>())
-                file.Photo.Get<PhotoViewModel>().SetLoaded();
+            if (updatePhotoViewModel &&
+                File.Photo.Has<PhotoViewModel>())
+                File.Photo.Get<PhotoViewModel>().SetLoaded();
             Bitmap = bitmap;
         }
         else
@@ -45,10 +51,11 @@ public partial class LoadingBitmap : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        if (file.Photo.Has<PhotoViewModel>())
-            file.Photo.Get<PhotoViewModel>().Reset();
-
         GC.SuppressFinalize(this);
+        if (updatePhotoViewModel &&
+            File.Photo.Has<PhotoViewModel>())
+            File.Photo.Get<PhotoViewModel>().Reset();
+
         Bitmap?.Dispose();
         tcs.Task.ContinueWith(t =>
         {
@@ -104,11 +111,11 @@ internal class CacheManager : IDisposable
         }
     }
 
-    public LoadingBitmap GetBitmap(PhotoFile file, int photoIdx, int loadPriority)
+    public LoadingBitmap GetBitmap(PhotoFile file, int photoIdx, int loadPriority, bool resetPhotoViewModelOnDispose = true)
     {
         if (Items.TryGetValue(file, out var bmp)) return bmp;
 
-        Items[file] = new LoadingBitmap(file, photoIdx);
+        Items[file] = new LoadingBitmap(file, photoIdx, resetPhotoViewModelOnDispose);
         queue.Enqueue(file, loadPriority);
         return Items[file];
     }
@@ -198,7 +205,10 @@ public partial class SortingViewModel : ViewModelBase
     private const int CacheSizeBefore = 8;
 
     public PhotoViewModel[] Photos { get; set; }
-    [ObservableProperty] public partial LoadingBitmap CurrentImage { get; private set; }
+
+    [ObservableProperty] private partial LoadingBitmap[] CurrentPhotoImages { get; set; } = [];
+    [ObservableProperty] private partial int CurrentPhotoImageIdx { get; set; }
+    public LoadingBitmap CurrentImage => CurrentPhotoImages[CurrentPhotoImageIdx];
 
     private int currentImageIdx;
     public int CurrentImageIdx
@@ -206,6 +216,7 @@ public partial class SortingViewModel : ViewModelBase
         get => currentImageIdx;
         set
         {
+            if (currentImageIdx == value) return;
             currentImageIdx = value;
             LoadImage();
         }
@@ -236,13 +247,40 @@ public partial class SortingViewModel : ViewModelBase
         OnPropertyChanged(nameof(CurrentImageIdx));
     }
 
+    public void NextImageFile()
+    {
+        CurrentPhotoImageIdx = int.Min(CurrentPhotoImageIdx + 1, CurrentPhotoImages.Length - 1);
+        OnPropertyChanged(nameof(CurrentImage));
+    }
+
+    public void PreviousImageFile()
+    {
+        CurrentPhotoImageIdx = int.Max(CurrentPhotoImageIdx - 1, 0);
+        OnPropertyChanged(nameof(CurrentImage));
+    }
+
     public void LoadImage()
     {
         if (currentImageIdx < 0 || photos.Length <= currentImageIdx) return;
         cache.StopCurrentLoads();
 
-        if (!GetPhotoFile(currentImageIdx, out var file)) throw new IndexOutOfRangeException();
-        CurrentImage = cache.GetBitmap(file, currentImageIdx, int.MinValue);
+        // Unload precedent image
+        foreach (var image in CurrentPhotoImages.Skip(1))
+            cache.Evict(image.File);
+
+        // Load bitmaps
+        CurrentPhotoImageIdx = 0;
+        CurrentPhotoImages = photos[currentImageIdx].Files
+            .Select((f, i) =>
+                cache.GetBitmap(
+                    f.Get<PhotoFile>(),
+                    currentImageIdx,
+                    i == 0 ? int.MinValue : 2,
+                    i == 0
+                )
+            )
+            .ToArray();
+        OnPropertyChanged(nameof(CurrentImage));
 
         // Unload bitmaps
         foreach (var kv in cache.Items)

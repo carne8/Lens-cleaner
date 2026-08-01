@@ -70,7 +70,15 @@ public partial class LoadingSortingViewModel : ViewModelBase
                 nameToPhoto.Add(filename, photoEntity);
             }
 
-            if (!PhotoFile.TryParseFile(photoEntity, path, out var photoFile)) continue;
+            if (!PhotoFile.TryParseFile(photoEntity, path, out var photoFile))
+            {
+                if (!photoExists)
+                {
+                    world.Destroy(photoEntity);
+                    nameToPhoto.Remove(filename);
+                }
+                continue;
+            }
             var photoFileEntity = world.Create(photoFile);
             photoEntity.Get<Photo>().Files.Add(photoFileEntity);
 
